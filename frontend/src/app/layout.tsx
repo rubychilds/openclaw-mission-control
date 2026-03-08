@@ -7,6 +7,7 @@ import { DM_Serif_Display, IBM_Plex_Sans, Sora } from "next/font/google";
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { TopNavActionsProvider } from "@/components/providers/TopNavActionsProvider";
 import { GlobalLoader } from "@/components/ui/global-loader";
 
 export const metadata: Metadata = {
@@ -43,8 +44,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       >
         <AuthProvider>
           <QueryProvider>
-            <GlobalLoader />
-            {children}
+            <TopNavActionsProvider>
+              <GlobalLoader />
+              {children}
+            </TopNavActionsProvider>
           </QueryProvider>
         </AuthProvider>
       </body>

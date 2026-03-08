@@ -30,6 +30,7 @@ import {
   useGetMeApiV1UsersMeGet,
 } from "@/api/generated/users/users";
 import { DashboardSidebar } from "@/components/organisms/DashboardSidebar";
+import { useTopNavActionsValue } from "@/components/providers/TopNavActionsProvider";
 import { isOnboardingComplete } from "@/lib/onboarding";
 
 const BREADCRUMB_LABELS: Record<string, string> = {
@@ -140,6 +141,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
   const isOnboardingPath = pathname === "/onboarding";
+  const topNavActions = useTopNavActionsValue();
 
   const meQuery = useGetMeApiV1UsersMeGet<
     getMeApiV1UsersMeGetResponse,
@@ -197,8 +199,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-app text-strong">
       <DashboardSidebar />
       <div className="flex flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-6 py-3">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-6">
           <Breadcrumbs />
+          {topNavActions ? (
+            <div className="flex items-center gap-3">{topNavActions}</div>
+          ) : null}
         </header>
         <div className="flex-1 bg-slate-50">
           {children}
