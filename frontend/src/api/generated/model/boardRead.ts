@@ -10,30 +10,30 @@ import type { BoardReadSuccessMetrics } from "./boardReadSuccessMetrics";
  * Board payload returned from read endpoints.
  */
 export interface BoardRead {
-  block_status_changes_with_pending_approval?: boolean;
-  board_group_id?: string | null;
-  board_type?: string;
-  comment_required_for_review?: boolean;
-  created_at: string;
-  created_by_user_id?: string | null;
-  created_by_user_name?: string | null;
+  name: string;
+  slug: string;
   description: string;
   gateway_id?: string | null;
-  goal_confirmed?: boolean;
-  goal_source?: string | null;
-  id: string;
-  /** @minimum 0 */
-  max_agents?: number;
-  name: string;
+  board_group_id?: string | null;
+  board_type?: string;
   objective?: string | null;
-  only_lead_can_change_status?: boolean;
-  organization_id: string;
-  require_approval_for_done?: boolean;
-  require_review_before_done?: boolean;
-  slug: string;
   success_metrics?: BoardReadSuccessMetrics;
   target_date?: string | null;
-  updated_at: string;
+  goal_confirmed?: boolean;
+  goal_source?: string | null;
+  require_approval_for_done?: boolean;
+  require_review_before_done?: boolean;
+  comment_required_for_review?: boolean;
+  block_status_changes_with_pending_approval?: boolean;
+  only_lead_can_change_status?: boolean;
+  /** @minimum 0 */
+  max_agents?: number;
+  id: string;
+  organization_id: string;
+  created_by_user_id?: string | null;
   updated_by_user_id?: string | null;
+  created_by_user_name?: string | null;
   updated_by_user_name?: string | null;
+  created_at: string;
+  updated_at: string;
 }
