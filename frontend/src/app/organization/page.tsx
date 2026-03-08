@@ -42,7 +42,6 @@ import type {
 import { SignedOutPanel } from "@/components/auth/SignedOutPanel";
 import { BoardAccessTable } from "@/components/organization/BoardAccessTable";
 import { MembersInvitesTable } from "@/components/organization/MembersInvitesTable";
-import { DashboardSidebar } from "@/components/organisms/DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
@@ -701,7 +700,6 @@ export default function OrganizationPage() {
         />
       </SignedOut>
       <SignedIn>
-        <DashboardSidebar />
         <main className="flex-1 overflow-y-auto bg-slate-50">
           <div className="sticky top-0 z-30 border-b border-slate-200 bg-white">
             <div className="px-8 py-6">

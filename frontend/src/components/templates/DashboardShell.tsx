@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ChevronRight } from "lucide-react";
 
 import { useAuth } from "@/auth/clerk";
 
@@ -11,8 +13,66 @@ import {
   type getMeApiV1UsersMeGetResponse,
   useGetMeApiV1UsersMeGet,
 } from "@/api/generated/users/users";
-import { BrandMark } from "@/components/atoms/BrandMark";
+import { DashboardSidebar } from "@/components/organisms/DashboardSidebar";
 import { isOnboardingComplete } from "@/lib/onboarding";
+
+const BREADCRUMB_LABELS: Record<string, string> = {
+  dashboard: "Dashboard",
+  activity: "Live feed",
+  approvals: "Approvals",
+  organization: "Teams",
+  gateways: "Gateways",
+  agents: "Agents",
+  boards: "Boards",
+  "board-groups": "Board groups",
+  "custom-fields": "Custom fields",
+  skills: "Skills",
+  marketplace: "Marketplace",
+  packs: "Packs",
+  new: "New",
+  edit: "Edit",
+  settings: "Settings",
+};
+
+function Breadcrumbs() {
+  const pathname = usePathname();
+
+  const crumbs = useMemo(() => {
+    const segments = pathname.split("/").filter(Boolean);
+    return segments.map((segment, i) => {
+      const href = "/" + segments.slice(0, i + 1).join("/");
+      const label =
+        BREADCRUMB_LABELS[segment] ??
+        segment.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      const isLast = i === segments.length - 1;
+      return { href, label, isLast };
+    });
+  }, [pathname]);
+
+  if (crumbs.length === 0) return null;
+
+  return (
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm">
+      {crumbs.map((crumb, i) => (
+        <span key={crumb.href} className="flex items-center gap-1">
+          {i > 0 && (
+            <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
+          )}
+          {crumb.isLast ? (
+            <span className="font-medium text-slate-900">{crumb.label}</span>
+          ) : (
+            <Link
+              href={crumb.href}
+              className="text-slate-500 transition hover:text-slate-700"
+            >
+              {crumb.label}
+            </Link>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+}
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -64,19 +124,24 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return (
-    <div className="min-h-screen bg-app text-strong">
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-sm">
-        <div className="grid grid-cols-[260px_1fr_auto] items-center gap-0 py-3">
-          <div className="flex items-center px-6">
-            <BrandMark />
-          </div>
-          <div />
-          <div />
-        </div>
-      </header>
-      <div className="grid min-h-[calc(100vh-64px)] grid-cols-[260px_1fr] bg-slate-50">
+  if (isOnboardingPath) {
+    return (
+      <div className="min-h-screen bg-app text-strong">
         {children}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-app text-strong">
+      <DashboardSidebar />
+      <div className="flex flex-1 flex-col">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-6 py-3">
+          <Breadcrumbs />
+        </header>
+        <div className="flex-1 bg-slate-50">
+          {children}
+        </div>
       </div>
     </div>
   );

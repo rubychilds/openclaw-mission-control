@@ -28,7 +28,6 @@ import {
 
 import { Markdown } from "@/components/atoms/Markdown";
 import { StatusDot } from "@/components/atoms/StatusDot";
-import { DashboardSidebar } from "@/components/organisms/DashboardSidebar";
 import { TaskBoard } from "@/components/organisms/TaskBoard";
 import {
   DependencyBanner,
@@ -3147,7 +3146,6 @@ export default function BoardDetailPage() {
         </div>
       </SignedOut>
       <SignedIn>
-        <DashboardSidebar />
         <main
           className={cn(
             "flex-1 bg-gradient-to-br from-slate-50 to-slate-100",

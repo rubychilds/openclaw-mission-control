@@ -39,7 +39,6 @@ import type {
 import type { BoardGroupBoardSnapshot } from "@/api/generated/model";
 import { Markdown } from "@/components/atoms/Markdown";
 import { SignedOutPanel } from "@/components/auth/SignedOutPanel";
-import { DashboardSidebar } from "@/components/organisms/DashboardSidebar";
 import { DashboardShell } from "@/components/templates/DashboardShell";
 import { BoardChatComposer } from "@/components/BoardChatComposer";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -741,7 +740,6 @@ export default function BoardGroupDetailPage() {
         />
       </SignedOut>
       <SignedIn>
-        <DashboardSidebar />
         <main className="flex-1 overflow-y-auto bg-slate-50">
           <div className="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm">
             <div className="px-8 py-6">

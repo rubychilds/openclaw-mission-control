@@ -15,7 +15,6 @@ import {
 import { useListBoardsApiV1BoardsGet } from "@/api/generated/boards/boards";
 import type { ApprovalRead, BoardRead } from "@/api/generated/model";
 import { BoardApprovalsPanel } from "@/components/BoardApprovalsPanel";
-import { DashboardSidebar } from "@/components/organisms/DashboardSidebar";
 import { DashboardShell } from "@/components/templates/DashboardShell";
 import { Button } from "@/components/ui/button";
 
@@ -200,7 +199,6 @@ export default function GlobalApprovalsPage() {
         </div>
       </SignedOut>
       <SignedIn>
-        <DashboardSidebar />
         <GlobalApprovalsInner />
       </SignedIn>
     </DashboardShell>
