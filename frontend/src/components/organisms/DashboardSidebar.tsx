@@ -381,13 +381,25 @@ export function DashboardSidebar() {
                 </div>
               </div>
 
-              {/* Skills */}
+              {/* Skills & Agents */}
               {isAdmin ? (
                 <div>
                   <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    Skills
+                    Skills & Agents
                   </p>
                   <div className="mt-1 space-y-1">
+                    <Link
+                      href="/agents"
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-700 transition",
+                        pathname.startsWith("/agents")
+                          ? "bg-blue-100 text-blue-800 font-medium"
+                          : "hover:bg-slate-100",
+                      )}
+                    >
+                      <Bot className="h-4 w-4" />
+                      Agents
+                    </Link>
                     <Link
                       href="/skills/marketplace"
                       className={cn(
@@ -416,29 +428,6 @@ export function DashboardSidebar() {
                   </div>
                 </div>
               ) : null}
-
-              {/* Administration */}
-              <div>
-                <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                  Administration
-                </p>
-                <div className="mt-1 space-y-1">
-                  {isAdmin ? (
-                    <Link
-                      href="/agents"
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-700 transition",
-                        pathname.startsWith("/agents")
-                          ? "bg-blue-100 text-blue-800 font-medium"
-                          : "hover:bg-slate-100",
-                      )}
-                    >
-                      <Bot className="h-4 w-4" />
-                      Agents
-                    </Link>
-                  ) : null}
-                </div>
-              </div>
 
               {/* Board groups with boards (drop zones) */}
               {groups.map((group) =>
