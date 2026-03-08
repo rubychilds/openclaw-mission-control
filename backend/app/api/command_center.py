@@ -196,7 +196,7 @@ async def _dispatch_to_gateway_main(
     message = (
         f"COMMAND CENTER MESSAGE\n"
         f"From: {source}\n"
-        f"{f'Mentions: {', '.join(sorted(mentions))}' if mentions else ''}\n\n"
+        f"{'Mentions: ' + ', '.join(sorted(mentions)) if mentions else ''}\n\n"
         f"{snippet}\n\n"
         "Reply via command center:\n"
         f"POST {base_url}/api/v1/command-center/messages\n"
