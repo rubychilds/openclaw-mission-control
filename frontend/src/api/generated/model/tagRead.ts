@@ -11,7 +11,6 @@
 export interface TagRead {
   color?: string;
   created_at: string;
-  description?: string | null;
   id: string;
   name: string;
   organization_id: string;

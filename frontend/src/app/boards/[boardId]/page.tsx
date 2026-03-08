@@ -10,6 +10,7 @@ import {
   useSearchParams,
 } from "next/navigation";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { SignInButton, SignedIn, SignedOut, useAuth } from "@/auth/clerk";
 import {
   Activity,
@@ -85,7 +86,9 @@ import {
   updateTaskApiV1BoardsBoardIdTasksTaskIdPatch,
 } from "@/api/generated/tasks/tasks";
 import {
+  getListTagsApiV1TagsGetQueryKey,
   type listTagsApiV1TagsGetResponse,
+  useCreateTagApiV1TagsPost,
   useListTagsApiV1TagsGet,
 } from "@/api/generated/tags/tags";
 import {
@@ -800,6 +803,8 @@ export default function BoardDetailPage() {
       tagsQuery.data?.status === 200 ? (tagsQuery.data.data.items ?? []) : [],
     [tagsQuery.data],
   );
+  const queryClient = useQueryClient();
+  const createTagMutation = useCreateTagApiV1TagsPost();
   const customFieldDefinitionsQuery =
     useListOrgCustomFieldsApiV1OrganizationsMeCustomFieldsGet<
       listOrgCustomFieldsApiV1OrganizationsMeCustomFieldsGetResponse,
@@ -2240,6 +2245,55 @@ export default function BoardDetailPage() {
   const removeCreateTag = useCallback((tagId: string) => {
     setCreateTagIds((prev) => prev.filter((value) => value !== tagId));
   }, []);
+
+  const TAG_COLORS = [
+    "e57373", "f06292", "ba68c8", "9575cd",
+    "7986cb", "64b5f6", "4fc3f7", "4dd0e1",
+    "4db6ac", "81c784", "aed581", "dce775",
+    "fff176", "ffd54f", "ffb74d", "ff8a65",
+  ];
+
+  const handleCreateTagForCreate = useCallback(
+    (name: string) => {
+      const color = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
+      createTagMutation.mutate(
+        { data: { name, color } },
+        {
+          onSuccess: (response) => {
+            if (response.status === 200) {
+              const newTag = response.data;
+              addCreateTag(newTag.id);
+              queryClient.invalidateQueries({
+                queryKey: getListTagsApiV1TagsGetQueryKey(),
+              });
+            }
+          },
+        },
+      );
+    },
+    [addCreateTag, createTagMutation, queryClient],
+  );
+
+  const handleCreateTagForEdit = useCallback(
+    (name: string) => {
+      const color = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
+      createTagMutation.mutate(
+        { data: { name, color } },
+        {
+          onSuccess: (response) => {
+            if (response.status === 200) {
+              const newTag = response.data;
+              addEditTag(newTag.id);
+              queryClient.invalidateQueries({
+                queryKey: getListTagsApiV1TagsGetQueryKey(),
+              });
+            }
+          },
+        },
+      );
+    },
+    [addEditTag, createTagMutation, queryClient],
+  );
 
   const hasTaskChanges = useMemo(() => {
     if (!selectedTask) return false;
@@ -4265,25 +4319,17 @@ export default function BoardDetailPage() {
               ) : null}
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Tags
-                </label>
-                <button
-                  type="button"
-                  onClick={() => router.push("/tags")}
-                  className="text-xs font-medium text-slate-500 underline underline-offset-2 transition hover:text-slate-700"
-                >
-                  Manage tags
-                </button>
-              </div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Tags
+              </label>
               <DropdownSelect
                 ariaLabel="Add tag"
                 placeholder="Add tag"
                 options={editTagOptions}
                 onValueChange={addEditTag}
                 disabled={!selectedTask || isSavingTask || !canWrite}
-                emptyMessage="No tags configured."
+                emptyMessage="No tags available."
+                onCreate={isOrgAdmin ? handleCreateTagForEdit : undefined}
               />
               {editTagIds.length === 0 ? (
                 <p className="text-xs text-slate-500">No tags assigned.</p>
@@ -4549,23 +4595,15 @@ export default function BoardDetailPage() {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-sm font-medium text-strong">Tags</label>
-                <button
-                  type="button"
-                  onClick={() => router.push("/tags")}
-                  className="text-xs font-medium text-slate-500 underline underline-offset-2 transition hover:text-slate-700"
-                >
-                  Manage tags
-                </button>
-              </div>
+              <label className="text-sm font-medium text-strong">Tags</label>
               <DropdownSelect
                 ariaLabel="Add tag"
                 placeholder="Add tag"
                 options={createTagOptions}
                 onValueChange={addCreateTag}
                 disabled={!canWrite || isCreating}
-                emptyMessage="No tags configured."
+                emptyMessage="No tags available."
+                onCreate={isOrgAdmin ? handleCreateTagForCreate : undefined}
               />
               {createTagIds.length ? (
                 <div className="flex flex-wrap gap-2">

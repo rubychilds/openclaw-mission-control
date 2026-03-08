@@ -14,7 +14,6 @@ import {
   Network,
   Settings,
   Store,
-  Tags,
 } from "lucide-react";
 
 import { useAuth } from "@/auth/clerk";
@@ -24,6 +23,8 @@ import {
   type healthzHealthzGetResponse,
   useHealthzHealthzGet,
 } from "@/api/generated/default/default";
+import { OrgSwitcher } from "@/components/organisms/OrgSwitcher";
+import { UserMenu } from "@/components/organisms/UserMenu";
 import { cn } from "@/lib/utils";
 
 export function DashboardSidebar() {
@@ -60,10 +61,10 @@ export function DashboardSidebar() {
   return (
     <aside className="flex h-full w-64 flex-col border-r border-slate-200 bg-white">
       <div className="flex-1 px-3 py-4">
-        <p className="px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Navigation
-        </p>
-        <nav className="mt-3 space-y-4 text-sm">
+        <div className="px-1 pb-3">
+          <OrgSwitcher />
+        </div>
+        <nav className="mt-1 space-y-4 text-sm">
           <div>
             <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               Overview
@@ -124,18 +125,6 @@ export function DashboardSidebar() {
               >
                 <LayoutGrid className="h-4 w-4" />
                 Boards
-              </Link>
-              <Link
-                href="/tags"
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-700 transition",
-                  pathname.startsWith("/tags")
-                    ? "bg-blue-100 text-blue-800 font-medium"
-                    : "hover:bg-slate-100",
-                )}
-              >
-                <Tags className="h-4 w-4" />
-                Tags
               </Link>
               <Link
                 href="/approvals"
@@ -252,8 +241,11 @@ export function DashboardSidebar() {
           </div>
         </nav>
       </div>
-      <div className="border-t border-slate-200 p-4">
-        <div className="flex items-center gap-2 text-xs text-slate-500">
+      <div className="border-t border-slate-200 px-3 py-3">
+        <div className="flex items-center gap-2 px-1">
+          <UserMenu />
+        </div>
+        <div className="mt-2 flex items-center gap-2 px-1 text-xs text-slate-500">
           <span
             className={cn(
               "h-2 w-2 rounded-full",

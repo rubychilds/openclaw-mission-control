@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -38,6 +38,8 @@ type DropdownSelectProps = {
   searchEnabled?: boolean;
   searchPlaceholder?: string;
   emptyMessage?: string;
+  /** When set, a "Create …" item appears if the search text doesn't match any option. */
+  onCreate?: (searchValue: string) => void;
 };
 
 /**
@@ -89,6 +91,7 @@ export default function DropdownSelect({
   searchEnabled = true,
   searchPlaceholder,
   emptyMessage,
+  onCreate,
 }: DropdownSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
@@ -115,6 +118,21 @@ export default function DropdownSelect({
       onValueChange(nextValue);
     }
     handleOpenChange(false);
+  };
+
+  const trimmedSearch = searchValue.trim();
+  const showCreate =
+    onCreate &&
+    trimmedSearch.length > 0 &&
+    !options.some(
+      (o) => o.label.toLowerCase() === trimmedSearch.toLowerCase(),
+    );
+
+  const handleCreate = () => {
+    if (onCreate && trimmedSearch) {
+      onCreate(trimmedSearch);
+      handleOpenChange(false);
+    }
   };
 
   // Reset list scroll when opening or refining search so results start at the top.
@@ -184,9 +202,11 @@ export default function DropdownSelect({
             />
           ) : null}
           <CommandList ref={listRef} className="max-h-64 p-1">
-            <CommandEmpty className="px-3 py-6 text-center text-sm text-slate-500">
-              {emptyMessage ?? "No results found."}
-            </CommandEmpty>
+            {!showCreate ? (
+              <CommandEmpty className="px-3 py-6 text-center text-sm text-slate-500">
+                {emptyMessage ?? "No results found."}
+              </CommandEmpty>
+            ) : null}
             {options.map((option) => {
               const isSelected = value === option.value;
               const OptionIcon = option.icon;
@@ -222,6 +242,22 @@ export default function DropdownSelect({
                 </CommandItem>
               );
             })}
+            {showCreate ? (
+              <CommandItem
+                value={`__create__${trimmedSearch}`}
+                keywords={[trimmedSearch]}
+                onSelect={handleCreate}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-blue-600 transition-colors data-[selected=true]:bg-blue-50 data-[selected=true]:text-blue-700",
+                  itemClassName,
+                )}
+              >
+                <Plus className="h-4 w-4" />
+                <span>
+                  Create &ldquo;{trimmedSearch}&rdquo;
+                </span>
+              </CommandItem>
+            ) : null}
           </CommandList>
         </Command>
       </PopoverContent>

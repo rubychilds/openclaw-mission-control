@@ -31,6 +31,5 @@ class Tag(TenantScoped, table=True):
     name: str
     slug: str = Field(index=True)
     color: str = Field(default="9e9e9e")
-    description: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)

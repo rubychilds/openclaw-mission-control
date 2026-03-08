@@ -136,7 +136,6 @@ async def create_tag(
         name=payload.name,
         slug=slug,
         color=payload.color,
-        description=payload.description,
     )
     return TagRead.model_validate(tag, from_attributes=True)
 
