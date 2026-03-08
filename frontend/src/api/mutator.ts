@@ -67,9 +67,18 @@ export const customFetch = async <T>(
 
   if (!response.ok) {
     const contentType = response.headers.get("content-type") ?? "";
-    let errorData: unknown = null;
     const isJson =
       contentType.includes("application/json") || contentType.includes("+json");
+
+    // 4xx JSON responses are returned as typed results so callers can inspect
+    // response.status (e.g. 409 blocked, 422 validation). Only 5xx and
+    // non-JSON errors are thrown as ApiError.
+    if (response.status >= 400 && response.status < 500 && isJson) {
+      const data = (await response.json().catch(() => null)) as unknown;
+      return { data, status: response.status, headers: response.headers } as T;
+    }
+
+    let errorData: unknown = null;
     if (isJson) {
       errorData = (await response.json().catch(() => null)) as unknown;
     } else {
