@@ -20,6 +20,7 @@ export interface TaskCardRead {
   board_id: string | null;
   created_at: string;
   created_by_user_id: string | null;
+  created_by_user_name?: string | null;
   custom_field_values?: TaskCardReadCustomFieldValues;
   depends_on_task_ids?: string[];
   description?: string | null;
@@ -33,4 +34,6 @@ export interface TaskCardRead {
   tags?: TagRef[];
   title: string;
   updated_at: string;
+  updated_by_user_id?: string | null;
+  updated_by_user_name?: string | null;
 }

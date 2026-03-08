@@ -11,10 +11,14 @@
 export interface TagRead {
   color?: string;
   created_at: string;
+  created_by_user_id?: string | null;
+  created_by_user_name?: string | null;
   id: string;
   name: string;
   organization_id: string;
   slug: string;
   task_count?: number;
   updated_at: string;
+  updated_by_user_id?: string | null;
+  updated_by_user_name?: string | null;
 }

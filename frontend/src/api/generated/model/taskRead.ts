@@ -17,6 +17,7 @@ export interface TaskRead {
   board_id: string | null;
   created_at: string;
   created_by_user_id: string | null;
+  created_by_user_name?: string | null;
   custom_field_values?: TaskReadCustomFieldValues;
   depends_on_task_ids?: string[];
   description?: string | null;
@@ -30,4 +31,6 @@ export interface TaskRead {
   tags?: TagRef[];
   title: string;
   updated_at: string;
+  updated_by_user_id?: string | null;
+  updated_by_user_name?: string | null;
 }

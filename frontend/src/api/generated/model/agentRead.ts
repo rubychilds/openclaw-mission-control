@@ -15,6 +15,8 @@ export interface AgentRead {
   board_id?: string | null;
   /** Creation timestamp. */
   created_at: string;
+  created_by_user_id?: string | null;
+  created_by_user_name?: string | null;
   /** Gateway UUID that manages this agent. */
   gateway_id: string;
   /** Runtime heartbeat behavior overrides for this agent. */
@@ -44,4 +46,6 @@ export interface AgentRead {
   status?: string;
   /** Last update timestamp. */
   updated_at: string;
+  updated_by_user_id?: string | null;
+  updated_by_user_name?: string | null;
 }

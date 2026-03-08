@@ -15,6 +15,8 @@ export interface BoardRead {
   board_type?: string;
   comment_required_for_review?: boolean;
   created_at: string;
+  created_by_user_id?: string | null;
+  created_by_user_name?: string | null;
   description: string;
   gateway_id?: string | null;
   goal_confirmed?: boolean;
@@ -32,4 +34,6 @@ export interface BoardRead {
   success_metrics?: BoardReadSuccessMetrics;
   target_date?: string | null;
   updated_at: string;
+  updated_by_user_id?: string | null;
+  updated_by_user_name?: string | null;
 }
