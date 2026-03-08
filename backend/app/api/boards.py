@@ -40,8 +40,11 @@ from app.services.openclaw.gateway_dispatch import GatewayDispatchService
 from app.services.openclaw.gateway_rpc import GatewayConfig as GatewayClientConfig
 from app.services.openclaw.gateway_rpc import OpenClawGatewayError
 from app.services.organizations import OrganizationContext, board_access_filter
+from app.services.user_display import resolve_user_display_names
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from fastapi_pagination.limit_offset import LimitOffsetPage
     from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -100,6 +103,33 @@ def _board_update_message(
     lines.append("")
     lines.append("Take action: review the board changes and adjust plan/assignments as needed.")
     return "\n".join(lines)
+
+
+async def _enrich_board_reads(
+    session: AsyncSession,
+    boards: Sequence[Board],
+) -> list[BoardRead]:
+    """Attach user display names to board read models."""
+    user_ids: set[UUID] = set()
+    for b in boards:
+        if b.created_by_user_id:
+            user_ids.add(b.created_by_user_id)
+        if b.updated_by_user_id:
+            user_ids.add(b.updated_by_user_id)
+    names = await resolve_user_display_names(session, user_ids)
+    result: list[BoardRead] = []
+    for b in boards:
+        read = BoardRead.model_validate(b, from_attributes=True)
+        read.created_by_user_name = names.get(b.created_by_user_id) if b.created_by_user_id else None
+        read.updated_by_user_name = names.get(b.updated_by_user_id) if b.updated_by_user_id else None
+        result.append(read)
+    return result
+
+
+async def _enrich_single_board(session: AsyncSession, board: Board) -> BoardRead:
+    """Attach user display names to a single board read model."""
+    enriched = await _enrich_board_reads(session, [board])
+    return enriched[0]
 
 
 async def _require_gateway_main_agent(session: AsyncSession, gateway: Gateway) -> None:
@@ -473,7 +503,17 @@ async def list_boards(
         func.lower(col(Board.name)).asc(),
         col(Board.created_at).desc(),
     )
-    return await paginate(session, statement)
+
+    async def _transform(items: Sequence[object]) -> Sequence[object]:
+        boards: list[Board] = []
+        for item in items:
+            if not isinstance(item, Board):
+                msg = "Expected Board items from paginated query"
+                raise TypeError(msg)
+            boards.append(item)
+        return await _enrich_board_reads(session, boards)
+
+    return await paginate(session, statement, transformer=_transform)
 
 
 @router.post("", response_model=BoardRead)
@@ -487,15 +527,18 @@ async def create_board(
     """Create a board in the active organization."""
     data = payload.model_dump()
     data["organization_id"] = ctx.organization.id
-    return await crud.create(session, Board, **data)
+    data["created_by_user_id"] = ctx.member.user_id
+    board = await crud.create(session, Board, **data)
+    return await _enrich_single_board(session, board)
 
 
 @router.get("/{board_id}", response_model=BoardRead)
-def get_board(
+async def get_board(
     board: Board = BOARD_USER_READ_DEP,
-) -> Board:
+    session: AsyncSession = SESSION_DEP,
+) -> BoardRead:
     """Get a board by id."""
-    return board
+    return await _enrich_single_board(session, board)
 
 
 @router.get("/{board_id}/snapshot", response_model=BoardSnapshot)
@@ -538,8 +581,10 @@ async def update_board(
     payload: BoardUpdate,
     session: AsyncSession = SESSION_DEP,
     board: Board = BOARD_USER_WRITE_DEP,
-) -> Board:
+    ctx: OrganizationContext = ORG_MEMBER_DEP,
+) -> BoardRead:
     """Update mutable board properties."""
+    board.updated_by_user_id = ctx.member.user_id
     requested_updates = payload.model_dump(exclude_unset=True)
     previous_values = {
         field_name: getattr(board, field_name)
@@ -597,7 +642,7 @@ async def update_board(
                 updated.id,
                 sorted(changed_fields),
             )
-    return updated
+    return await _enrich_single_board(session, updated)
 
 
 @router.delete("/{board_id}", response_model=OkResponse)

@@ -67,6 +67,7 @@ from app.services.tags import (
     replace_tags,
     validate_tag_ids,
 )
+from app.services.user_display import resolve_user_display_names
 from app.services.task_dependencies import (
     blocked_by_dependency_ids,
     dependency_ids_by_task_id,
@@ -1228,6 +1229,13 @@ async def _task_read_page(
         board_id=board_id,
         task_ids=task_ids,
     )
+    user_ids: set[UUID] = set()
+    for task in tasks:
+        if task.created_by_user_id:
+            user_ids.add(task.created_by_user_id)
+        if task.updated_by_user_id:
+            user_ids.add(task.updated_by_user_id)
+    names = await resolve_user_display_names(session, user_ids)
 
     output: list[TaskRead] = []
     for task in tasks:
@@ -1248,6 +1256,8 @@ async def _task_read_page(
                     "blocked_by_task_ids": blocked_by,
                     "is_blocked": bool(blocked_by),
                     "custom_field_values": custom_field_values_by_task_id.get(task.id, {}),
+                    "created_by_user_name": names.get(task.created_by_user_id) if task.created_by_user_id else None,
+                    "updated_by_user_name": names.get(task.updated_by_user_id) if task.updated_by_user_id else None,
                 },
             ),
         )
@@ -1935,6 +1945,12 @@ async def _task_read_response(
     )
     if task.status == "done":
         blocked_ids = []
+    user_ids: set[UUID] = set()
+    if task.created_by_user_id:
+        user_ids.add(task.created_by_user_id)
+    if task.updated_by_user_id:
+        user_ids.add(task.updated_by_user_id)
+    names = await resolve_user_display_names(session, user_ids)
     return TaskRead.model_validate(task, from_attributes=True).model_copy(
         update={
             "depends_on_task_ids": dep_ids,
@@ -1943,6 +1959,8 @@ async def _task_read_response(
             "blocked_by_task_ids": blocked_ids,
             "is_blocked": bool(blocked_ids),
             "custom_field_values": custom_field_values_by_task_id.get(task.id, {}),
+            "created_by_user_name": names.get(task.created_by_user_id) if task.created_by_user_id else None,
+            "updated_by_user_name": names.get(task.updated_by_user_id) if task.updated_by_user_id else None,
         },
     )
 
@@ -2265,6 +2283,8 @@ async def _apply_lead_task_update(
         )
 
     update.task.updated_at = utcnow()
+    if update.actor.actor_type == "user" and update.actor.user is not None:
+        update.task.updated_by_user_id = update.actor.user.id
     session.add(update.task)
     event_type, message = _task_event_details(update.task, update.previous_status)
     record_activity(
