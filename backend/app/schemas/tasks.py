@@ -78,6 +78,9 @@ class TaskRead(TaskBase):
     id: UUID
     board_id: UUID | None
     created_by_user_id: UUID | None
+    updated_by_user_id: UUID | None = None
+    created_by_user_name: str | None = None
+    updated_by_user_name: str | None = None
     in_progress_at: datetime | None
     created_at: datetime
     updated_at: datetime

@@ -33,7 +33,6 @@ class TagBase(SQLModel):
     name: str
     slug: str
     color: str = "9e9e9e"
-    description: str | None = None
 
 
 class TagRef(SQLModel):
@@ -51,7 +50,6 @@ class TagCreate(SQLModel):
     name: NonEmptyStr
     slug: str | None = None
     color: str = "9e9e9e"
-    description: str | None = None
 
     @field_validator("slug", mode="before")
     @classmethod
@@ -82,7 +80,6 @@ class TagUpdate(SQLModel):
     name: NonEmptyStr | None = None
     slug: str | None = None
     color: str | None = None
-    description: str | None = None
 
     @field_validator("slug", mode="before")
     @classmethod
@@ -122,5 +119,9 @@ class TagRead(TagBase):
     id: UUID
     organization_id: UUID
     task_count: int = 0
+    created_by_user_id: UUID | None = None
+    updated_by_user_id: UUID | None = None
+    created_by_user_name: str | None = None
+    updated_by_user_name: str | None = None
     created_at: datetime
     updated_at: datetime

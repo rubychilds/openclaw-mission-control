@@ -1,7 +1,7 @@
 "use client";
 
 import { ClerkProvider } from "@clerk/nextjs";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { isLikelyValidClerkPublishableKey } from "@/auth/clerkKey";
 import {
@@ -21,10 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [localMode]);
 
   if (localMode) {
-    if (!getLocalAuthToken()) {
-      return <LocalAuthLogin />;
-    }
-    return <>{children}</>;
+    return <LocalAuthGate>{children}</LocalAuthGate>;
   }
 
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -43,4 +40,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </ClerkProvider>
   );
+}
+
+/**
+ * Client-only gate for local auth mode.
+ * Defers the sessionStorage check to avoid SSR/client hydration mismatch.
+ */
+function LocalAuthGate({ children }: { children: ReactNode }) {
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setHasToken(Boolean(getLocalAuthToken()));
+  }, []);
+
+  // Still determining auth state — render nothing to avoid hydration mismatch.
+  if (hasToken === null) return null;
+
+  if (!hasToken) {
+    return <LocalAuthLogin onAuthenticated={() => setHasToken(true)} />;
+  }
+
+  return <>{children}</>;
 }

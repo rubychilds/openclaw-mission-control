@@ -5,19 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { SignOutButton, useUser } from "@/auth/clerk";
 import { clearLocalAuthToken, isLocalAuthMode } from "@/auth/localAuth";
-import {
-  Activity,
-  Bot,
-  Boxes,
-  ChevronDown,
-  LayoutDashboard,
-  LogOut,
-  Plus,
-  Server,
-  Settings,
-  Store,
-  Trello,
-} from "lucide-react";
+import { ChevronDown, LogOut, Settings } from "lucide-react";
 
 import {
   Popover,
@@ -130,52 +118,14 @@ export function UserMenu({
           </div>
         </div>
         <div className="p-2">
-          <div className="grid grid-cols-2 gap-2">
-            <Link
-              href="/boards"
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-[color:var(--neutral-300,var(--border-strong))] bg-white px-3 py-2 text-sm font-semibold text-[color:var(--neutral-800,var(--text))] transition hover:border-[color:var(--primary-navy,var(--accent-strong))] hover:bg-[color:var(--neutral-100,var(--surface-muted))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-teal,var(--accent))] focus-visible:ring-offset-2"
-              onClick={() => setOpen(false)}
-            >
-              <Trello className="h-4 w-4 text-[color:var(--neutral-700,var(--text-quiet))]" />
-              Open boards
-            </Link>
-            <Link
-              href="/boards/new"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--primary-navy,var(--accent))] px-3 py-2 text-sm font-semibold text-white shadow-[0_2px_8px_rgba(10,22,40,0.15)] transition hover:bg-[color:var(--secondary-navy,var(--accent-strong))] hover:translate-y-[-1px] hover:shadow-[0_4px_12px_rgba(10,22,40,0.20)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-teal,var(--accent))] focus-visible:ring-offset-2"
-              onClick={() => setOpen(false)}
-            >
-              <Plus className="h-4 w-4 opacity-90" />
-              Create board
-            </Link>
-          </div>
-
-          <div className="my-2 h-px bg-[color:var(--neutral-200,var(--border))]" />
-
-          {(
-            [
-              { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-              { href: "/activity", label: "Activity", icon: Activity },
-              { href: "/agents", label: "Agents", icon: Bot },
-              { href: "/gateways", label: "Gateways", icon: Server },
-              {
-                href: "/skills/marketplace",
-                label: "Skills marketplace",
-                icon: Store,
-              },
-              { href: "/skills/packs", label: "Skill packs", icon: Boxes },
-              { href: "/settings", label: "Settings", icon: Settings },
-            ] as const
-          ).map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-[color:var(--neutral-800,var(--text))] transition hover:bg-[color:var(--neutral-100,var(--surface-muted))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-teal,var(--accent))] focus-visible:ring-offset-2"
-              onClick={() => setOpen(false)}
-            >
-              <item.icon className="h-4 w-4 text-[color:var(--neutral-700,var(--text-quiet))]" />
-              {item.label}
-            </Link>
-          ))}
+          <Link
+            href="/settings"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-[color:var(--neutral-800,var(--text))] transition hover:bg-[color:var(--neutral-100,var(--surface-muted))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-teal,var(--accent))] focus-visible:ring-offset-2"
+            onClick={() => setOpen(false)}
+          >
+            <Settings className="h-4 w-4 text-[color:var(--neutral-700,var(--text-quiet))]" />
+            Settings
+          </Link>
 
           <div className="my-2 h-px bg-[color:var(--neutral-200,var(--border))]" />
 

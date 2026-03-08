@@ -34,7 +34,6 @@ import type {
 } from "@/api/generated/model";
 import { Markdown } from "@/components/atoms/Markdown";
 import { StatusPill } from "@/components/atoms/StatusPill";
-import { DashboardSidebar } from "@/components/organisms/DashboardSidebar";
 import { DashboardShell } from "@/components/templates/DashboardShell";
 import { Button } from "@/components/ui/button";
 import {
@@ -160,7 +159,6 @@ export default function AgentDetailPage() {
         </div>
       </SignedOut>
       <SignedIn>
-        <DashboardSidebar />
         {!isAdmin ? (
           <div className="flex h-full flex-col gap-6 rounded-2xl surface-panel p-8">
             <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-6 py-5 text-sm text-muted">
@@ -281,6 +279,11 @@ export default function AgentDetailPage() {
                         <p className="mt-1 text-sm text-muted">
                           {formatTimestamp(agent.updated_at)}
                         </p>
+                        {agent.updated_by_user_name && (
+                          <p className="mt-0.5 text-xs text-quiet">
+                            by {agent.updated_by_user_name}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-quiet">
@@ -289,6 +292,11 @@ export default function AgentDetailPage() {
                         <p className="mt-1 text-sm text-muted">
                           {formatTimestamp(agent.created_at)}
                         </p>
+                        {agent.created_by_user_name && (
+                          <p className="mt-0.5 text-xs text-quiet">
+                            by {agent.created_by_user_name}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

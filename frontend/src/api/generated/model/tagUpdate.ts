@@ -9,8 +9,7 @@
  * Payload for partial tag updates.
  */
 export interface TagUpdate {
-  color?: string | null;
-  description?: string | null;
   name?: string | null;
   slug?: string | null;
+  color?: string | null;
 }

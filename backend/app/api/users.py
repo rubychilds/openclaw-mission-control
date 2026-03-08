@@ -26,6 +26,7 @@ from app.models.organization_invite_board_access import OrganizationInviteBoardA
 from app.models.organization_invites import OrganizationInvite
 from app.models.organization_members import OrganizationMember
 from app.models.organizations import Organization
+from app.models.tags import Tag
 from app.models.task_dependencies import TaskDependency
 from app.models.task_fingerprints import TaskFingerprint
 from app.models.tasks import Task
@@ -256,6 +257,55 @@ async def delete_me(
         Task,
         col(Task.created_by_user_id) == user.id,
         created_by_user_id=None,
+        commit=False,
+    )
+    await crud.update_where(
+        session,
+        Task,
+        col(Task.updated_by_user_id) == user.id,
+        updated_by_user_id=None,
+        commit=False,
+    )
+    await crud.update_where(
+        session,
+        Board,
+        col(Board.created_by_user_id) == user.id,
+        created_by_user_id=None,
+        commit=False,
+    )
+    await crud.update_where(
+        session,
+        Board,
+        col(Board.updated_by_user_id) == user.id,
+        updated_by_user_id=None,
+        commit=False,
+    )
+    await crud.update_where(
+        session,
+        Agent,
+        col(Agent.created_by_user_id) == user.id,
+        created_by_user_id=None,
+        commit=False,
+    )
+    await crud.update_where(
+        session,
+        Agent,
+        col(Agent.updated_by_user_id) == user.id,
+        updated_by_user_id=None,
+        commit=False,
+    )
+    await crud.update_where(
+        session,
+        Tag,
+        col(Tag.created_by_user_id) == user.id,
+        created_by_user_id=None,
+        commit=False,
+    )
+    await crud.update_where(
+        session,
+        Tag,
+        col(Tag.updated_by_user_id) == user.id,
+        updated_by_user_id=None,
         commit=False,
     )
 

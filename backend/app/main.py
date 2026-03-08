@@ -21,6 +21,7 @@ from app.api.board_memory import router as board_memory_router
 from app.api.board_onboarding import router as board_onboarding_router
 from app.api.board_webhooks import router as board_webhooks_router
 from app.api.boards import router as boards_router
+from app.api.command_center import router as command_center_router
 from app.api.gateway import router as gateway_router
 from app.api.gateways import router as gateways_router
 from app.api.metrics import router as metrics_router
@@ -109,6 +110,10 @@ OPENAPI_TAGS = [
     {
         "name": "board-onboarding",
         "description": "Board onboarding state, setup actions, and onboarding workflow endpoints.",
+    },
+    {
+        "name": "command-center",
+        "description": "Org-wide command center chat, messaging, and agent dispatch endpoints.",
     },
     {
         "name": "approvals",
@@ -553,6 +558,7 @@ api_v1.include_router(boards_router)
 api_v1.include_router(board_memory_router)
 api_v1.include_router(board_webhooks_router)
 api_v1.include_router(board_onboarding_router)
+api_v1.include_router(command_center_router)
 api_v1.include_router(approvals_router)
 api_v1.include_router(tasks_router)
 api_v1.include_router(task_custom_fields_router)

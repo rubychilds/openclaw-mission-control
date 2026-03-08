@@ -53,6 +53,7 @@ export function LocalAuthLogin({ onAuthenticated }: LocalAuthLoginProps) {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    console.log("[LocalAuthLogin] handleSubmit fired, token length:", token.length);
     const cleaned = token.trim();
     if (!cleaned) {
       setError("Bearer token is required.");

@@ -21,6 +21,7 @@ from app.schemas.pagination import DefaultLimitOffsetPage
 from app.schemas.tags import TagCreate, TagRead, TagUpdate
 from app.services.organizations import OrganizationContext
 from app.services.tags import slugify_tag, task_counts_for_tags
+from app.services.user_display import resolve_user_display_names
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -84,9 +85,20 @@ async def _tag_read_page(
         session,
         tag_ids=[item.id for item in items],
     )
+    user_ids: set[UUID] = set()
+    for item in items:
+        if item.created_by_user_id:
+            user_ids.add(item.created_by_user_id)
+        if item.updated_by_user_id:
+            user_ids.add(item.updated_by_user_id)
+    names = await resolve_user_display_names(session, user_ids)
     return [
         TagRead.model_validate(item, from_attributes=True).model_copy(
-            update={"task_count": counts.get(item.id, 0)},
+            update={
+                "task_count": counts.get(item.id, 0),
+                "created_by_user_name": names.get(item.created_by_user_id) if item.created_by_user_id else None,
+                "updated_by_user_name": names.get(item.updated_by_user_id) if item.updated_by_user_id else None,
+            },
         )
         for item in items
     ]
@@ -136,9 +148,10 @@ async def create_tag(
         name=payload.name,
         slug=slug,
         color=payload.color,
-        description=payload.description,
+        created_by_user_id=ctx.member.user_id,
     )
-    return TagRead.model_validate(tag, from_attributes=True)
+    reads = await _tag_read_page(session=session, items=[tag])
+    return reads[0]
 
 
 @router.get("/{tag_id}", response_model=TagRead)
@@ -160,8 +173,18 @@ async def get_tag(
             ),
         )
     ).one()
+    user_ids: set[UUID] = set()
+    if tag.created_by_user_id:
+        user_ids.add(tag.created_by_user_id)
+    if tag.updated_by_user_id:
+        user_ids.add(tag.updated_by_user_id)
+    names = await resolve_user_display_names(session, user_ids)
     return TagRead.model_validate(tag, from_attributes=True).model_copy(
-        update={"task_count": int(count or 0)},
+        update={
+            "task_count": int(count or 0),
+            "created_by_user_name": names.get(tag.created_by_user_id) if tag.created_by_user_id else None,
+            "updated_by_user_name": names.get(tag.updated_by_user_id) if tag.updated_by_user_id else None,
+        },
     )
 
 
@@ -193,8 +216,10 @@ async def update_tag(
             exclude_tag_id=tag.id,
         )
     updates["updated_at"] = utcnow()
+    updates["updated_by_user_id"] = ctx.member.user_id
     updated = await crud.patch(session, tag, updates)
-    return TagRead.model_validate(updated, from_attributes=True)
+    reads = await _tag_read_page(session=session, items=[updated])
+    return reads[0]
 
 
 @router.delete("/{tag_id}", response_model=OkResponse)
