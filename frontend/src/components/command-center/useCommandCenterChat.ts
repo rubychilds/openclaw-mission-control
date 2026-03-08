@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/auth/clerk";
 import { ApiError } from "@/api/mutator";
@@ -16,6 +16,13 @@ import {
   type getMeApiV1UsersMeGetResponse,
   useGetMeApiV1UsersMeGet,
 } from "@/api/generated/users/users";
+import {
+  sendMessageApiV1CommandCenterMessagesPost,
+  streamMessagesApiV1CommandCenterMessagesStreamGet,
+} from "@/api/generated/command-center/command-center";
+import type { CommandCenterMessageRead } from "@/api/generated/model";
+import { createExponentialBackoff } from "@/lib/backoff";
+import { usePageActive } from "@/hooks/usePageActive";
 
 import type { CommandCenterMessage } from "./CommandCenterMessageCard";
 import type { MentionSuggestion } from "./CommandCenterComposer";
@@ -23,8 +30,26 @@ import type { MentionSuggestion } from "./CommandCenterComposer";
 let nextLocalId = 0;
 const localId = () => `local-${Date.now()}-${++nextLocalId}`;
 
+const SSE_RECONNECT_BACKOFF = {
+  baseMs: 1_000,
+  factor: 2,
+  maxMs: 30_000,
+  jitterMs: 500,
+};
+
+function apiMessageToLocal(msg: CommandCenterMessageRead): CommandCenterMessage {
+  return {
+    id: msg.id,
+    role: msg.role as "user" | "assistant" | "system",
+    content: msg.content,
+    source: msg.source ?? null,
+    created_at: msg.created_at,
+  };
+}
+
 export function useCommandCenterChat() {
   const { isSignedIn } = useAuth();
+  const isPageActive = usePageActive();
   const [messages, setMessages] = useState<CommandCenterMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
   const messagesRef = useRef<CommandCenterMessage[]>([]);
@@ -47,7 +72,7 @@ export function useCommandCenterChat() {
 
   const profile = meQuery.data?.status === 200 ? meQuery.data.data : null;
   const currentUserName =
-    profile?.display_name ?? profile?.email ?? "You";
+    profile?.preferred_name ?? profile?.name ?? profile?.email ?? "You";
 
   const agents =
     agentsQuery.data?.status === 200 ? agentsQuery.data.data.items : [];
@@ -71,6 +96,114 @@ export function useCommandCenterChat() {
   const addMessage = useCallback((msg: CommandCenterMessage) => {
     setMessages((prev) => [...prev, msg]);
   }, []);
+
+  // Deduplicated message insertion (for SSE)
+  const upsertMessage = useCallback((msg: CommandCenterMessage) => {
+    setMessages((prev) => {
+      const exists = prev.some((m) => m.id === msg.id);
+      if (exists) return prev;
+      return [...prev, msg];
+    });
+  }, []);
+
+  // SSE stream for real-time messages
+  useEffect(() => {
+    if (!isPageActive || !isSignedIn) return;
+
+    let isCancelled = false;
+    const abortController = new AbortController();
+    const backoff = createExponentialBackoff(SSE_RECONNECT_BACKOFF);
+    let reconnectTimeout: number | undefined;
+
+    const latestTimestamp = () => {
+      const msgs = messagesRef.current;
+      if (msgs.length === 0) return undefined;
+      return msgs[msgs.length - 1]?.created_at;
+    };
+
+    const connect = async () => {
+      try {
+        const since = latestTimestamp();
+        const params = since ? { since } : {};
+        const streamResult =
+          await streamMessagesApiV1CommandCenterMessagesStreamGet(params, {
+            headers: { Accept: "text/event-stream" },
+            signal: abortController.signal,
+          });
+        if (streamResult.status !== 200) {
+          throw new Error("Unable to connect command center stream.");
+        }
+        const response = streamResult.data as Response;
+        if (!(response instanceof Response) || !response.body) {
+          throw new Error("Unable to connect command center stream.");
+        }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (!isCancelled) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (value && value.length) {
+            backoff.reset();
+          }
+          buffer += decoder.decode(value, { stream: true });
+          buffer = buffer.replace(/\r\n/g, "\n");
+          let boundary = buffer.indexOf("\n\n");
+          while (boundary !== -1) {
+            const raw = buffer.slice(0, boundary);
+            buffer = buffer.slice(boundary + 2);
+            const lines = raw.split("\n");
+            let eventType = "message";
+            let data = "";
+            for (const line of lines) {
+              if (line.startsWith("event:")) {
+                eventType = line.slice(6).trim();
+              } else if (line.startsWith("data:")) {
+                data += line.slice(5).trim();
+              }
+            }
+            if (eventType === "message" && data) {
+              try {
+                const payload = JSON.parse(data) as {
+                  message?: CommandCenterMessageRead;
+                };
+                if (payload.message) {
+                  upsertMessage(apiMessageToLocal(payload.message));
+                }
+              } catch {
+                // ignore malformed
+              }
+            }
+            boundary = buffer.indexOf("\n\n");
+          }
+        }
+      } catch {
+        // Reconnect handled below.
+      }
+
+      if (!isCancelled) {
+        if (reconnectTimeout !== undefined) {
+          window.clearTimeout(reconnectTimeout);
+        }
+        const delay = backoff.nextDelayMs();
+        reconnectTimeout = window.setTimeout(() => {
+          reconnectTimeout = undefined;
+          void connect();
+        }, delay);
+      }
+    };
+
+    void connect();
+
+    return () => {
+      isCancelled = true;
+      abortController.abort();
+      if (reconnectTimeout !== undefined) {
+        window.clearTimeout(reconnectTimeout);
+      }
+    };
+  }, [isPageActive, isSignedIn, upsertMessage]);
 
   const handleSlashCommand = useCallback(
     (command: string): boolean => {
@@ -160,22 +293,25 @@ export function useCommandCenterChat() {
       setIsSending(true);
 
       try {
-        // TODO: POST to /api/v1/command-center/messages when backend is ready
-        // For now, add a placeholder assistant response
-        setTimeout(() => {
-          addMessage({
-            id: localId(),
-            role: "assistant",
-            content:
-              "Message received. The command center backend is not yet connected — this is a placeholder response.",
-            source: "Assistant",
-            created_at: new Date().toISOString(),
-          });
-          setIsSending(false);
-        }, 800);
-
+        await sendMessageApiV1CommandCenterMessagesPost({
+          content: trimmed,
+          source: currentUserName,
+        });
+        // The real message (with server-assigned ID) will arrive via SSE
+        setIsSending(false);
         return true;
-      } catch {
+      } catch (err) {
+        const detail =
+          err instanceof ApiError
+            ? `${err.status}: ${err.message}`
+            : String(err);
+        addMessage({
+          id: localId(),
+          role: "system",
+          content: `Failed to send message: ${detail}`,
+          source: null,
+          created_at: new Date().toISOString(),
+        });
         setIsSending(false);
         return false;
       }
