@@ -37,6 +37,7 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
   activity: "Live feed",
   approvals: "Approvals",
+  chat: "Chat",
   organization: "Teams",
   gateways: "Gateways",
   agents: "Agents",
