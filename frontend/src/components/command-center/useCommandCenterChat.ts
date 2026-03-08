@@ -281,9 +281,10 @@ export function useCommandCenterChat() {
         return handleSlashCommand(trimmed);
       }
 
-      // Add user message optimistically
+      // Add user message optimistically with a temporary local ID.
+      const tempId = localId();
       const userMsg: CommandCenterMessage = {
-        id: localId(),
+        id: tempId,
         role: "user",
         content: trimmed,
         source: currentUserName,
@@ -293,11 +294,19 @@ export function useCommandCenterChat() {
       setIsSending(true);
 
       try {
-        await sendMessageApiV1CommandCenterMessagesPost({
+        const result = await sendMessageApiV1CommandCenterMessagesPost({
           content: trimmed,
           source: currentUserName,
         });
-        // The real message (with server-assigned ID) will arrive via SSE
+        // Replace the optimistic local ID with the server-assigned ID so the
+        // SSE stream can deduplicate when the same message arrives.
+        if (result.status === 200 && result.data?.id) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === tempId ? { ...m, id: result.data.id } : m,
+            ),
+          );
+        }
         setIsSending(false);
         return true;
       } catch (err) {

@@ -163,7 +163,12 @@ async def send_message(
             source=source,
         )
     except Exception:
-        pass  # Agent dispatch failure shouldn't prevent the message from being stored
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "command_center.dispatch_failed",
+            exc_info=True,
+        )
 
     return user_message
 
