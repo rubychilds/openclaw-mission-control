@@ -245,6 +245,10 @@ class AgentRead(AgentBase):
         default=None,
         description="Last heartbeat timestamp.",
     )
+    created_by_user_id: UUID | None = None
+    updated_by_user_id: UUID | None = None
+    created_by_user_name: str | None = None
+    updated_by_user_name: str | None = None
     created_at: datetime = Field(description="Creation timestamp.")
     updated_at: datetime = Field(description="Last update timestamp.")
 

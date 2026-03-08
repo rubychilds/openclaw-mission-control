@@ -119,5 +119,9 @@ class TagRead(TagBase):
     id: UUID
     organization_id: UUID
     task_count: int = 0
+    created_by_user_id: UUID | None = None
+    updated_by_user_id: UUID | None = None
+    created_by_user_name: str | None = None
+    updated_by_user_name: str | None = None
     created_at: datetime
     updated_at: datetime

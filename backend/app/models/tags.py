@@ -31,5 +31,7 @@ class Tag(TenantScoped, table=True):
     name: str
     slug: str = Field(index=True)
     color: str = Field(default="9e9e9e")
+    created_by_user_id: UUID | None = Field(default=None, foreign_key="users.id", index=True)
+    updated_by_user_id: UUID | None = Field(default=None, foreign_key="users.id", index=True)
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
