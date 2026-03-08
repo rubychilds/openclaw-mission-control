@@ -270,7 +270,7 @@ export function DashboardSidebar() {
   );
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-slate-200 bg-white">
+    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
       <div className="flex-1 overflow-y-auto px-3 py-4">
         <div className="px-1 pb-3">
           <OrgSwitcher />

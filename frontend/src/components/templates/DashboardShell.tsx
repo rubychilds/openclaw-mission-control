@@ -10,6 +10,22 @@ import { useAuth } from "@/auth/clerk";
 
 import { ApiError } from "@/api/mutator";
 import {
+  type listAgentsApiV1AgentsGetResponse,
+  useListAgentsApiV1AgentsGet,
+} from "@/api/generated/agents/agents";
+import {
+  type listBoardGroupsApiV1BoardGroupsGetResponse,
+  useListBoardGroupsApiV1BoardGroupsGet,
+} from "@/api/generated/board-groups/board-groups";
+import {
+  type listBoardsApiV1BoardsGetResponse,
+  useListBoardsApiV1BoardsGet,
+} from "@/api/generated/boards/boards";
+import {
+  type listGatewaysApiV1GatewaysGetResponse,
+  useListGatewaysApiV1GatewaysGet,
+} from "@/api/generated/gateways/gateways";
+import {
   type getMeApiV1UsersMeGetResponse,
   useGetMeApiV1UsersMeGet,
 } from "@/api/generated/users/users";
@@ -34,20 +50,65 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   settings: "Settings",
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function Breadcrumbs() {
   const pathname = usePathname();
+  const { isSignedIn } = useAuth();
+
+  const boardsQuery = useListBoardsApiV1BoardsGet<
+    listBoardsApiV1BoardsGetResponse,
+    ApiError
+  >(undefined, { query: { enabled: Boolean(isSignedIn), retry: false } });
+
+  const groupsQuery = useListBoardGroupsApiV1BoardGroupsGet<
+    listBoardGroupsApiV1BoardGroupsGetResponse,
+    ApiError
+  >(undefined, { query: { enabled: Boolean(isSignedIn), retry: false } });
+
+  const agentsQuery = useListAgentsApiV1AgentsGet<
+    listAgentsApiV1AgentsGetResponse,
+    ApiError
+  >(undefined, { query: { enabled: Boolean(isSignedIn), retry: false } });
+
+  const gatewaysQuery = useListGatewaysApiV1GatewaysGet<
+    listGatewaysApiV1GatewaysGetResponse,
+    ApiError
+  >(undefined, { query: { enabled: Boolean(isSignedIn), retry: false } });
+
+  const nameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const boards =
+      boardsQuery.data?.status === 200 ? boardsQuery.data.data.items : [];
+    const groups =
+      groupsQuery.data?.status === 200 ? groupsQuery.data.data.items : [];
+    const agents =
+      agentsQuery.data?.status === 200 ? agentsQuery.data.data.items : [];
+    const gateways =
+      gatewaysQuery.data?.status === 200 ? gatewaysQuery.data.data.items : [];
+    for (const b of boards) map.set(b.id, b.name);
+    for (const g of groups) map.set(g.id, g.name);
+    for (const a of agents) map.set(a.id, a.name);
+    for (const gw of gateways) map.set(gw.id, gw.name);
+    return map;
+  }, [boardsQuery.data, groupsQuery.data, agentsQuery.data, gatewaysQuery.data]);
 
   const crumbs = useMemo(() => {
     const segments = pathname.split("/").filter(Boolean);
     return segments.map((segment, i) => {
       const href = "/" + segments.slice(0, i + 1).join("/");
-      const label =
-        BREADCRUMB_LABELS[segment] ??
-        segment.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      let label: string;
+      if (UUID_RE.test(segment)) {
+        label = nameMap.get(segment) ?? "...";
+      } else {
+        label =
+          BREADCRUMB_LABELS[segment] ??
+          segment.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      }
       const isLast = i === segments.length - 1;
       return { href, label, isLast };
     });
-  }, [pathname]);
+  }, [pathname, nameMap]);
 
   if (crumbs.length === 0) return null;
 
