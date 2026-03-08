@@ -279,6 +279,11 @@ export default function AgentDetailPage() {
                         <p className="mt-1 text-sm text-muted">
                           {formatTimestamp(agent.updated_at)}
                         </p>
+                        {agent.updated_by_user_name && (
+                          <p className="mt-0.5 text-xs text-quiet">
+                            by {agent.updated_by_user_name}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-quiet">
@@ -287,6 +292,11 @@ export default function AgentDetailPage() {
                         <p className="mt-1 text-sm text-muted">
                           {formatTimestamp(agent.created_at)}
                         </p>
+                        {agent.created_by_user_name && (
+                          <p className="mt-0.5 text-xs text-quiet">
+                            by {agent.created_by_user_name}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

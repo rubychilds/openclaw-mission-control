@@ -34,6 +34,7 @@ import {
   type DependencyBannerDependency,
 } from "@/components/molecules/DependencyBanner";
 import { DashboardShell } from "@/components/templates/DashboardShell";
+import { useTopNavActions } from "@/components/providers/TopNavActionsProvider";
 import { BoardChatComposer } from "@/components/BoardChatComposer";
 import { TaskCustomFieldsEditor } from "./TaskCustomFieldsEditor";
 import { Button } from "@/components/ui/button";
@@ -747,6 +748,7 @@ export default function BoardDetailPage() {
   const boardIdParam = params?.boardId;
   const boardId = Array.isArray(boardIdParam) ? boardIdParam[0] : boardIdParam;
   const { isSignedIn } = useAuth();
+  const setTopNavActions = useTopNavActions();
   const isPageActive = usePageActive();
   const taskIdFromUrl = searchParams.get("taskId");
   const commentIdFromUrl = searchParams.get("commentId");
@@ -2964,6 +2966,105 @@ export default function BoardDetailPage() {
     return "Agent";
   };
 
+  // Inject agent avatars, pause, New Task, and chat into the top nav (breadcrumb bar)
+  useEffect(() => {
+    setTopNavActions(
+      <>
+        {sortedAgents.length > 0 ? (
+          <div className="flex items-center -space-x-1.5">
+            {sortedAgents.slice(0, 5).map((agent) => {
+              const isWorking = workingAgentIds.has(agent.id);
+              return (
+                <button
+                  key={agent.id}
+                  type="button"
+                  onClick={() => router.push(`/agents/${agent.id}`)}
+                  className="relative flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[10px] font-semibold text-slate-700 ring-2 ring-white transition hover:z-10 hover:ring-blue-200"
+                  title={agent.name}
+                >
+                  {agentAvatarLabel(agent)}
+                  <StatusDot
+                    status={agent.status}
+                    variant="agent"
+                    className={cn(
+                      "absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full border border-white",
+                      isWorking && "ring-1 ring-emerald-200",
+                    )}
+                  />
+                </button>
+              );
+            })}
+            {sortedAgents.length > 5 ? (
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-[10px] font-medium text-slate-600 ring-2 ring-white">
+                +{sortedAgents.length - 5}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        {isOrgAdmin && workingAgentIds.size > 0 ? (
+          <Button
+            variant="outline"
+            onClick={() =>
+              openAgentsControlDialog(isAgentsPaused ? "resume" : "pause")
+            }
+            disabled={
+              !isSignedIn || !boardId || isAgentsControlSending || !canWrite
+            }
+            className={cn(
+              "h-9 w-9 p-0",
+              isAgentsPaused
+                ? "border-amber-200 bg-amber-50/60 text-amber-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800"
+                : "",
+            )}
+            aria-label={isAgentsPaused ? "Resume agents" : "Pause agents"}
+            title={
+              canWrite
+                ? isAgentsPaused
+                  ? "Resume agents"
+                  : "Pause agents"
+                : "Read-only access"
+            }
+          >
+            {isAgentsPaused ? (
+              <Play className="h-4 w-4" />
+            ) : (
+              <Pause className="h-4 w-4" />
+            )}
+          </Button>
+        ) : null}
+        <Button
+          onClick={() => setIsDialogOpen(true)}
+          title={canWrite ? "New task" : "Read-only access"}
+          disabled={!canWrite}
+        >
+          <Plus className="h-4 w-4" />
+          New Task
+        </Button>
+        <Button
+          variant="outline"
+          onClick={openBoardChat}
+          className="h-9 w-9 p-0"
+          aria-label="Board chat"
+          title="Board chat"
+        >
+          <MessageSquare className="h-4 w-4" />
+        </Button>
+      </>,
+    );
+    return () => setTopNavActions(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    setTopNavActions,
+    sortedAgents,
+    workingAgentIds,
+    isOrgAdmin,
+    isAgentsPaused,
+    isAgentsControlSending,
+    canWrite,
+    isSignedIn,
+    boardId,
+  ]);
+
   const formatTaskTimestamp = (value?: string | null) => {
     if (!value) return "—";
     const date = parseApiDatetime(value);
@@ -3156,12 +3257,32 @@ export default function BoardDetailPage() {
             <div className="px-8 py-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h1 className="mt-2 text-2xl font-semibold text-slate-900 tracking-tight">
-                    {board?.name ?? "Board"}
-                  </h1>
+                  <div className="flex items-center gap-2">
+                    <h1 className="mt-2 text-2xl font-semibold text-slate-900 tracking-tight">
+                      {board?.name ?? "Board"}
+                    </h1>
+                    {isOrgAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/boards/${boardId}/edit`)}
+                        className="mt-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                        aria-label="Board settings"
+                        title="Board settings"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                  </div>
                   <p className="mt-1 text-sm text-slate-500">
                     Keep tasks moving through your workflow.
                   </p>
+                  {(board?.created_by_user_name || board?.updated_by_user_name) && (
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {board.created_by_user_name && `Created by ${board.created_by_user_name}`}
+                      {board.created_by_user_name && board.updated_by_user_name && " · "}
+                      {board.updated_by_user_name && `Updated by ${board.updated_by_user_name}`}
+                    </p>
+                  )}
                   {isBoardLeadProvisioning ? (
                     <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800">
                       <RefreshCcw className="h-3.5 w-3.5 animate-spin" />
@@ -3195,15 +3316,6 @@ export default function BoardDetailPage() {
                     </button>
                   </div>
                   <Button
-                    onClick={() => setIsDialogOpen(true)}
-                    className="h-9 w-9 p-0"
-                    aria-label="New task"
-                    title={canWrite ? "New task" : "Read-only access"}
-                    disabled={!canWrite}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <Button
                     variant="outline"
                     onClick={() => router.push(`/boards/${boardId}/approvals`)}
                     className="relative h-9 w-9 p-0"
@@ -3217,53 +3329,6 @@ export default function BoardDetailPage() {
                       </span>
                     ) : null}
                   </Button>
-                  {isOrgAdmin ? (
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        openAgentsControlDialog(
-                          isAgentsPaused ? "resume" : "pause",
-                        )
-                      }
-                      disabled={
-                        !isSignedIn ||
-                        !boardId ||
-                        isAgentsControlSending ||
-                        !canWrite
-                      }
-                      className={cn(
-                        "h-9 w-9 p-0",
-                        isAgentsPaused
-                          ? "border-amber-200 bg-amber-50/60 text-amber-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800"
-                          : "",
-                      )}
-                      aria-label={
-                        isAgentsPaused ? "Resume agents" : "Pause agents"
-                      }
-                      title={
-                        canWrite
-                          ? isAgentsPaused
-                            ? "Resume agents"
-                            : "Pause agents"
-                          : "Read-only access"
-                      }
-                    >
-                      {isAgentsPaused ? (
-                        <Play className="h-4 w-4" />
-                      ) : (
-                        <Pause className="h-4 w-4" />
-                      )}
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="outline"
-                    onClick={openBoardChat}
-                    className="h-9 w-9 p-0"
-                    aria-label="Board chat"
-                    title="Board chat"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                  </Button>
                   <Button
                     variant="outline"
                     onClick={openLiveFeed}
@@ -3273,87 +3338,13 @@ export default function BoardDetailPage() {
                   >
                     <Activity className="h-4 w-4" />
                   </Button>
-                  {isOrgAdmin ? (
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/boards/${boardId}/edit`)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
-                      aria-label="Board settings"
-                      title="Board settings"
-                    >
-                      <Settings className="h-4 w-4" />
-                    </button>
-                  ) : null}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="relative flex gap-6 p-6">
-            {isOrgAdmin ? (
-              <aside className="flex h-full w-64 flex-col rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      Agents
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {sortedAgents.length} total
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/agents/new")}
-                    className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
-                  >
-                    Add
-                  </button>
-                </div>
-                <div className="flex-1 space-y-2 overflow-y-auto p-3">
-                  {sortedAgents.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-slate-200 p-3 text-xs text-slate-500">
-                      No agents assigned yet.
-                    </div>
-                  ) : (
-                    sortedAgents.map((agent) => {
-                      const isWorking = workingAgentIds.has(agent.id);
-                      return (
-                        <button
-                          key={agent.id}
-                          type="button"
-                          className={cn(
-                            "flex w-full items-center gap-3 rounded-lg border border-transparent px-2 py-2 text-left transition hover:border-slate-200 hover:bg-slate-50",
-                          )}
-                          onClick={() => router.push(`/agents/${agent.id}`)}
-                        >
-                          <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
-                            {agentAvatarLabel(agent)}
-                            <StatusDot
-                              status={agent.status}
-                              variant="agent"
-                              className={cn(
-                                "absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-white",
-                                isWorking && "ring-2 ring-emerald-200",
-                              )}
-                            />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-slate-900">
-                              {agent.name}
-                            </p>
-                            <p className="text-[11px] text-slate-500">
-                              {agentRoleLabel(agent)}
-                            </p>
-                          </div>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              </aside>
-            ) : null}
-
-            <div className="min-w-0 flex-1 space-y-6">
+          <div className="relative p-6">
+            <div className="space-y-6">
               {error && (
                 <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600 shadow-sm">
                   {error}
@@ -3745,6 +3736,13 @@ export default function BoardDetailPage() {
               <p className="mt-1 text-sm font-medium text-slate-900">
                 {selectedTask?.title ?? "Task"}
               </p>
+              {(selectedTask?.created_by_user_name || selectedTask?.updated_by_user_name) && (
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {selectedTask.created_by_user_name && `Created by ${selectedTask.created_by_user_name}`}
+                  {selectedTask.created_by_user_name && selectedTask.updated_by_user_name && " · "}
+                  {selectedTask.updated_by_user_name && `Updated by ${selectedTask.updated_by_user_name}`}
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <button
