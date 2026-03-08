@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, Plus } from "lucide-react";
+import { Building2, Plus, Settings } from "lucide-react";
 
 import { useAuth } from "@/auth/clerk";
 import { ApiError } from "@/api/mutator";
@@ -33,6 +34,7 @@ import {
 
 export function OrgSwitcher() {
   const { isSignedIn } = useAuth();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [orgName, setOrgName] = useState("");
@@ -113,6 +115,10 @@ export function OrgSwitcher() {
     });
 
   const handleOrgChange = (value: string) => {
+    if (value === "__settings__") {
+      router.push("/organization");
+      return;
+    }
     if (value === "__create__") {
       setOrgError(null);
       setCreateOpen(true);
@@ -144,7 +150,7 @@ export function OrgSwitcher() {
   return (
     <div className="relative">
       <Select value={orgValue} onValueChange={handleOrgChange}>
-        <SelectTrigger className="h-9 w-[220px] rounded-md border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 shadow-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0">
+        <SelectTrigger className="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 shadow-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0">
           <span className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-slate-400" />
             <SelectValue placeholder="Select organization" />
@@ -173,6 +179,15 @@ export function OrgSwitcher() {
             </SelectItem>
           )}
           <SelectSeparator className="my-2" />
+          <SelectItem
+            value="__settings__"
+            className="rounded-md py-2 pl-3 pr-3 text-sm font-medium text-slate-600 hover:text-slate-900 focus:bg-slate-100 [&>span:first-child]:hidden"
+          >
+            <span className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-slate-400" />
+              Org settings
+            </span>
+          </SelectItem>
           <SelectItem
             value="__create__"
             className="rounded-md py-2 pl-3 pr-3 text-sm font-medium text-slate-600 hover:text-slate-900 focus:bg-slate-100 [&>span:first-child]:hidden"
