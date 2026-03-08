@@ -73,7 +73,7 @@ export function DashboardSidebar() {
   const boardsQuery = useListBoardsApiV1BoardsGet<
     listBoardsApiV1BoardsGetResponse,
     ApiError
-  >({
+  >(undefined, {
     query: {
       enabled: Boolean(isSignedIn),
       refetchInterval: 30_000,
@@ -85,7 +85,7 @@ export function DashboardSidebar() {
   const groupsQuery = useListBoardGroupsApiV1BoardGroupsGet<
     listBoardGroupsApiV1BoardGroupsGetResponse,
     ApiError
-  >({
+  >(undefined, {
     query: {
       enabled: Boolean(isSignedIn),
       refetchInterval: 30_000,
